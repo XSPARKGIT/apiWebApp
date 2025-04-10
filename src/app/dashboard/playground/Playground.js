@@ -46,6 +46,13 @@ export default function Playground() {
     return apiKeys.some(k => k.key === keyToValidate && k.status === 'active');
   };
 
+  // Instead of using a string message in the response, create a function that returns JSX
+  const getInvalidFormatMessage = () => (
+    <span>
+      The API key format is invalid. Keys should begin with <code>keymzanziprod_</code> or <code>keymzanzidev_</code> followed by a random string.
+    </span>
+  );
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -67,7 +74,7 @@ export default function Playground() {
       // Set invalid response
       setResponse({
         valid: false,
-        message: 'The API key format is invalid. Keys should begin with &quot;keymzanziprod_&quot; or &quot;keymzanzidev_&quot; followed by a random string.',
+        messageJsx: getInvalidFormatMessage(),
         timestamp: new Date().toISOString()
       });
       
@@ -193,7 +200,7 @@ export default function Playground() {
                         {response.valid ? 'Valid API Key' : 'Invalid API Key'}
                       </h3>
                     </div>
-                    <p className="text-gray-700">{response.message}</p>
+                    {response.messageJsx || <p className="text-gray-700">{response.message}</p>}
                   </div>
                   
                   {response.valid && (
