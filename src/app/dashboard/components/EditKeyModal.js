@@ -77,7 +77,7 @@ export default function EditKeyModal({ apiKey, onClose, onSaveChanges }) {
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
             />
             <p className="text-sm text-gray-500 mt-2">
-              * If the combined usage of all your keys exceeds your plan's limit, all requests will be rejected.
+              * If the combined usage of all your keys exceeds your plan&apos;s limit, all requests will be rejected.
             </p>
           </div>
 

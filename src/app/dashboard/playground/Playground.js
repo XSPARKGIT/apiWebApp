@@ -67,7 +67,7 @@ export default function Playground() {
       // Set invalid response
       setResponse({
         valid: false,
-        message: 'The API key format is invalid. Keys should begin with "keymzanziprod_" or "keymzanzidev_" followed by a random string.',
+        message: 'The API key format is invalid. Keys should begin with &quot;keymzanziprod_&quot; or &quot;keymzanzidev_&quot; followed by a random string.',
         timestamp: new Date().toISOString()
       });
       
