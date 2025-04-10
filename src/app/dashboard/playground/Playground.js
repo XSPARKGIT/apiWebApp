@@ -53,6 +53,13 @@ export default function Playground() {
     </span>
   );
 
+  // Create another JSX function for the second error message
+  const getInvalidKeyMessage = () => (
+    <span>
+      This API key does not exist or is inactive in our database.
+    </span>
+  );
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -91,7 +98,7 @@ export default function Playground() {
       // Set invalid response
       setResponse({
         valid: false,
-        message: 'This API key does not exist or is inactive in our database.',
+        messageJsx: getInvalidKeyMessage(),
         timestamp: new Date().toISOString()
       });
       
