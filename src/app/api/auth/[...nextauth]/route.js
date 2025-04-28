@@ -2,6 +2,11 @@ import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { createClient } from '@supabase/supabase-js';
 
+const isProduction = process.env.NODE_ENV === 'production';
+const siteUrl = isProduction 
+  ? 'https://api-web-app-aick.vercel.app' 
+  : 'http://localhost:3000';
+
 // Create a Supabase client for direct database operations
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -22,6 +27,7 @@ export const authOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     }),
   ],
+  trustHost: true,
   pages: {
     signIn: "/auth/signin",
     signOut: "/auth/signout",
@@ -67,6 +73,10 @@ export const authOptions = {
       return token;
     },
     async signIn({ user, account, profile }) {
+      console.log('Auth environment:', process.env.NODE_ENV);
+      console.log('NEXTAUTH_URL:', process.env.NEXTAUTH_URL);
+      console.log('Attempting to sign in user:', user.email);
+      
       try {
         console.log('User trying to sign in:', user.email);
         
@@ -126,6 +136,17 @@ export const authOptions = {
         // Still return true to allow sign in even if DB operations fail
         return true;
       }
+    },
+  },
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: isProduction,
+      },
     },
   },
 };
