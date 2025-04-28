@@ -2,6 +2,16 @@ import { ChatOpenAI } from "@langchain/openai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { RunnableSequence } from "@langchain/core/runnables";
+import { z } from "zod";
+import { StructuredOutputParser } from "@langchain/core/output_parsers";
+
+// Define the schema using zod
+const repoSummarySchema = z.object({
+  summary: z.string().describe("A concise 2-3 sentence summary of the repository's main purpose and features"),
+  cool_facts: z.array(z.string()).describe("A list of 3-5 interesting facts or key features about the repository"),
+  tech_stack: z.string().describe("Comma separated list of technologies used in the project"),
+  target_audience: z.string().describe("Primary intended users or developers for this project")
+});
 
 /**
  * Generates a summary of a GitHub repository from its README content
@@ -19,74 +29,46 @@ export const generateGitHubSummary = async (readmeContent) => {
       openAIApiKey: process.env.OPENAI_API_KEY,
     });
 
+    // Create a model that outputs according to the schema
+    const modelWithStructuredOutput = model.withStructuredOutput(repoSummarySchema);
+
     // Create prompt template
     const promptTemplate = ChatPromptTemplate.fromTemplate(`
       You are a helpful assistant that summarizes GitHub repositories.
       Please analyze this README content and provide a concise summary and interesting facts.
-      Format your response as a JSON object with exactly these fields:
-      {
-        "summary": "A concise 2-3 sentence summary of the repository's main purpose and features",
-        "cool_facts": ["fact1", "fact2", "fact3"],
-        "tech_stack": "Comma separated list of technologies used",
-        "target_audience": "Primary intended users or developers"
-      }
       
       README Content:
       {readme_content}
-      
-      Your response must be valid JSON that can be parsed with JSON.parse().
     `);
 
     console.log("[LangChain] Creating chain and processing README content");
     
     // Create a sequence for processing the README content
-    const chain = RunnableSequence.from([
-      promptTemplate,
-      model,
-      new StringOutputParser(),
-    ]);
+    const chain = promptTemplate.pipe(modelWithStructuredOutput);
 
     // Run the chain
-    const response = await chain.invoke({
+    const result = await chain.invoke({
       readme_content: readmeContent
     });
 
-    console.log("[LangChain] Successfully processed README content");
+    console.log("[LangChain] Successfully processed README content with structured output");
     
-    try {
-      // Parse the JSON response
-      // Find JSON content in the response (in case the model adds extra text)
-      let jsonStr = response;
-      
-      // Try to extract just the JSON part if there's additional text
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        jsonStr = jsonMatch[0];
-      }
-      
-      const parsedResponse = JSON.parse(jsonStr);
-      
-      return {
-        summary: parsedResponse.summary || "No summary available",
-        cool_facts: parsedResponse.cool_facts || [],
-        tech_stack: parsedResponse.tech_stack || "Not specified",
-        target_audience: parsedResponse.target_audience || "Not specified"
-      };
-    } catch (parseError) {
-      console.error(`[LangChain ERROR] Failed to parse JSON: ${parseError.message}`);
-      console.error(`[LangChain ERROR] Raw response: ${response}`);
-      
-      // Return a fallback response if parsing fails
-      return {
-        summary: "Failed to generate summary due to parsing error",
-        cool_facts: ["Could not extract facts from the response"],
-        tech_stack: "Unknown",
-        target_audience: "Unknown"
-      };
-    }
+    return {
+      summary: result.summary,
+      cool_facts: result.cool_facts,
+      tech_stack: result.tech_stack,
+      target_audience: result.target_audience
+    };
   } catch (error) {
     console.error(`[LangChain ERROR] ${error.message}`);
     console.error(`[LangChain ERROR STACK] ${error.stack}`);
-    throw new Error(`Failed to generate GitHub summary: ${error.message}`);
+    
+    // Return a fallback response if model or parsing fails
+    return {
+      summary: "Failed to generate summary due to error",
+      cool_facts: ["Could not extract facts from the repository"],
+      tech_stack: "Unknown",
+      target_audience: "Unknown"
+    };
   }
 }; 
